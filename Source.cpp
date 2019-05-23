@@ -72,7 +72,7 @@ HRESULT InitGeometry()
 	LPD3DXBUFFER pD3DXMtrlBuffer;
 
 	// Load the mesh from the specified file
-	const char* meshFile = "walle.x";
+	const char* meshFile = "meshes\\walle.x";
 	if (FAILED(D3DXLoadMeshFromX(meshFile, D3DXMESH_SYSTEMMEM,
 		g_pd3dDevice, NULL,
 		&pD3DXMtrlBuffer, NULL, &g_dwNumMaterials,
