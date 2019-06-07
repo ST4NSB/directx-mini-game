@@ -15,6 +15,7 @@ protected:
 
 	LPDIRECT3DDEVICE9 m_pDevice;
 	bool m_UpdateRequired;
+	D3DXMATRIX	matWorld;
 
 	HRESULT UpdateCameraMatrices();
 public:
@@ -35,6 +36,7 @@ public:
 	void MoveBackward(float fDist);
 	void MoveRight(float fDist);
 	void MoveUp(float fDist);
+	void MoveDown(float fDist);
 	void MoveInDirection(float fDist, D3DXVECTOR3* Dir);
 	void setCameraPos(int mouseValue);
 };
@@ -114,7 +116,7 @@ void CXCamera::LookAtPos(D3DXVECTOR3 *Position, D3DXVECTOR3 *LookAt, D3DXVECTOR3
 	D3DXMatrixLookAtLH(&m_ViewTransform, Position, LookAt, Up);
 
 	m_Position = *(Position);
-	m_LookAt = *(LookAt);
+    m_LookAt = *(LookAt);
 	m_Up = *(Up);
 
 	m_Right.x = m_ViewTransform._11;
@@ -180,6 +182,12 @@ void CXCamera::MoveUp(float fDist)
 	m_UpdateRequired = true;
 }
 
+void CXCamera::MoveDown(float fDist)
+{
+	m_Position -= fDist * m_Up;
+	m_UpdateRequired = true;
+}
+
 void CXCamera::MoveInDirection(float fDist, D3DXVECTOR3* Dir)
 {
 	D3DXVECTOR3 DirToMove(0,0,0);
@@ -187,6 +195,7 @@ void CXCamera::MoveInDirection(float fDist, D3DXVECTOR3* Dir)
 	m_Position += fDist*DirToMove;
 	m_UpdateRequired = true;
 }
+
 
 void CXCamera::setCameraPos(int mouseValue)
 {
@@ -203,7 +212,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 1: 
 		{
-			D3DXVECTOR3 vEyePt(8.5f, 2.0f, -0.5f);
+			D3DXVECTOR3 vEyePt(8.5f, 2.0f, -0.3f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -212,7 +221,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 2:
 		{
-			D3DXVECTOR3 vEyePt(-8.5f, 2.0f, 0.5f);
+			D3DXVECTOR3 vEyePt(-8.5f, 2.0f, 0.3f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -221,7 +230,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 3:
 		{
-			D3DXVECTOR3 vEyePt(0.0f, 2.0f, 8.0f);
+			D3DXVECTOR3 vEyePt(0.0f, 1.0f, 4.5f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -230,7 +239,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 4:
 		{
-			D3DXVECTOR3 vEyePt(0.0f, 8.0f, -2.0f);
+			D3DXVECTOR3 vEyePt(0.0f, 8.0f, -1.6f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 50.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -239,9 +248,9 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 5:
 		{
-			D3DXVECTOR3 vEyePt(0.0f, -8.0f, -1.0f);
+			D3DXVECTOR3 vEyePt(0.0f, 0.5f, -3.0f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 50.0f);
+			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
 			this->Update();
 			break;

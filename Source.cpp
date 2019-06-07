@@ -4,8 +4,11 @@
 #include <d3dx9.h>
 #include <strsafe.h>
 #include <dinput.h>
+#include <dshow.h>
+#include <math.h>
 
 #define D3DXToRadian(degree) ((degree) * (D3DX_PI / 180.0f))
+#define WM_GRAPHNOTIFY  WM_APP + 1
 
 #pragma comment (lib, "dinput8.lib")
 #pragma comment (lib, "dxguid.lib")
@@ -13,8 +16,8 @@
 #include "Camera.h"
 #include "Skybox.h"
 #include "Mesh.h"
+#include "Sound.h"
 #include "Input.h"
-
 
 
 //-----------------------------------------------------------------------------
@@ -22,19 +25,23 @@
 //-----------------------------------------------------------------------------
 LPDIRECT3D9             g_pD3D = NULL; // Used to create the D3DDevice
 LPDIRECT3DDEVICE9       g_pd3dDevice = NULL; // Our rendering device
+HDC hdc;
+HWND hWnd;
 
 CXCamera *camera;
 CXMesh *mesh;
 DXInput *dxinput;
 CXSkybox *skybox;
+DXSound *music;
 
 const char* mesh_file = "meshes\\walle.x";
+LPCWSTR audioMusic = L"sounds\\music.mp3";
 const char* szTextureFiles[6] = { 
-	"skybox\\1.jpg", "skybox\\2.jpg", "skybox\\3.jpg", 
-	"skybox\\4.jpg", "skybox\\5.jpg", "skybox\\6.jpg" };
+	"skybox\\pack1\\1.jpg", "skybox\\pack1\\2.jpg", "skybox\\pack1\\3.jpg", 
+	"skybox\\pack1\\4.jpg", "skybox\\pack1\\5.jpg", "skybox\\pack1\\6.jpg" };
 
+const float	movementSpeed = 0.010f;
 float dz;
-const float	movementSpeed = 0.025f;
 int mouseValue = 0;
 
 //-----------------------------------------------------------------------------
@@ -127,6 +134,7 @@ VOID SetupMatrices()
 	// a point to lookat, and a direction for which way is up. Here, we set the
 	// eye five units back along the z-axis and up three units, look at the 
 	// origin, and define "up" to be in the y-direction.
+	
 	camera->setCameraPos(mouseValue);
 	
 
@@ -153,11 +161,12 @@ VOID Render()
 	g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
 		D3DCOLOR_XRGB(0, 0, 255), 1.0f, 0);
 
+
 	if (SUCCEEDED(g_pd3dDevice->BeginScene()))
 	{
 		SetupMatrices();
 
-		dxinput->detectKeyMovement(dz, movementSpeed,camera);
+		dxinput->detectKeyMovement(dz, movementSpeed,camera, g_pd3dDevice);
 		dxinput->detectMouseInput(camera, mouseValue);
 		
 		skybox->setSkyboxDefaultPos(g_pd3dDevice);
@@ -183,11 +192,15 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 	switch (msg)
 	{
 	case WM_DESTROY:
+		music->Cleanup();
 		mesh->Cleanup();
 		skybox->Cleanup();
 		Cleanup();
 		dxinput->CleanDInput();
 		PostQuitMessage(0);
+		return 0;
+	case WM_GRAPHNOTIFY:
+		music->HandleGraphEvent();
 		return 0;
 	}
 
@@ -208,13 +221,18 @@ INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 	RegisterClassEx(&wc);
 
 	// Create the application's window
-	HWND hWnd = CreateWindow("D3D Wall-e", "D3D Wall-e: Simulator",
+	hWnd = CreateWindow("D3D Wall-e", "D3D Wall-e: Simulator",
 		WS_OVERLAPPEDWINDOW, 150, 100, 1000, 750,
 		GetDesktopWindow(), NULL, wc.hInstance, NULL);
+
+	HRESULT hr = CoInitialize(NULL);
+	hdc = GetDC(hWnd);
 
 	// Initialize Direct3D
 	if (SUCCEEDED(InitD3D(hWnd)))
 	{
+		music = new DXSound(hWnd, audioMusic);
+		//music->play();
 		dxinput = new DXInput(hInst, hWnd);
 		// Create the scene geometry
 		if (SUCCEEDED(InitGeometry()))

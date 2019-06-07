@@ -15,7 +15,7 @@ public:
 	VOID DetectInput();
 	VOID CleanDInput();
 	void closeWindow(HWND hwnd);
-	void detectKeyMovement(float &dz, const float movementSpeed, CXCamera *camera);
+	void detectKeyMovement(float &dz, const float movementSpeed, CXCamera *camera, LPDIRECT3DDEVICE9 g_pd3dDevice);
 	void detectMouseInput(CXCamera *camera, int &mouseValue);
 };
 
@@ -76,19 +76,21 @@ VOID DXInput::CleanDInput()
 	g_pDin->Release();    // close DirectInput before exiting
 }
 
-void DXInput::detectKeyMovement(float &dz, const float movementSpeed, CXCamera *camera)
+void DXInput::detectKeyMovement(float &dz, const float movementSpeed, CXCamera *camera, LPDIRECT3DDEVICE9 g_pd3dDevice)
 {
 	if (g_Keystate[DIK_UPARROW] & 0x80)
 	{
 		dz += movementSpeed;
-		//camera->MoveForward(dz/2);
-		//camera->Update();
+		/*camera->MoveUp(dz/1000);
+		camera->MoveForward(dz / 500);
+		camera->Update();*/
 	}
 	if (g_Keystate[DIK_DOWNARROW] & 0x80)
 	{
 		dz -= movementSpeed;
-		///camera->MoveBackward(dz/2);
-		//camera->Update();
+		/*camera->MoveDown(dz / 1000);
+		camera->MoveBackward(dz / 500);
+		camera->Update();*/
 	}
 }
 
@@ -105,7 +107,8 @@ void DXInput::detectMouseInput(CXCamera *camera, int &mouseValue)
 	}
 	if (g_pMousestate.rgbButtons[1] & 0x80 && !mouseState[1]) 
 	{
-		--mouseValue %= 6;
+		mouseValue = -mouseValue;
+		mouseValue = abs(--mouseValue % 6);
 		mouseState[1] = true;
 	}
 	

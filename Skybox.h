@@ -147,15 +147,14 @@ void CXSkybox::drawSkybox(LPDIRECT3DDEVICE9 g_pd3dDevice)
 
 void CXSkybox::setSkyboxDefaultPos(LPDIRECT3DDEVICE9 g_pd3dDevice)
 {
-	D3DXMATRIXA16 matWorld, matRotationy, matrotationx;
+	D3DXMATRIXA16 matWorld, matRotationy;
 	D3DXMATRIXA16 matScale, matTrans;
 
 	// 4 top, 3 bottom
-	D3DXMatrixRotationX(&matrotationx, 0.1f);
-	D3DXMatrixRotationY(&matRotationy, 20.4f);
-	FLOAT yScale = 0.3f, xzScale = (yScale * 2.0f);
+	D3DXMatrixRotationY(&matRotationy, 20.77f);
+	FLOAT yScale = 1.1f, xzScale = (1.5 * 5.0f);
 	D3DXMatrixScaling(&matScale, xzScale, yScale, xzScale);
-	D3DXMatrixTranslation(&matTrans, -2.5f, 0.0f, 2.5f);
-	matWorld = matScale * matTrans * matRotationy * matrotationx;
+	D3DXMatrixTranslation(&matTrans, -38.0f, -0.93f, 30.5f);
+	matWorld = matScale * matTrans * matRotationy;
 	g_pd3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
 }

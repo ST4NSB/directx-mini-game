@@ -126,12 +126,12 @@ void CXMesh::drawMesh(LPDIRECT3DDEVICE9 g_pd3dDevice)
 
 void CXMesh::setMeshDefaultPos(LPDIRECT3DDEVICE9 g_pd3dDevice)
 {
-	D3DXMATRIX matScale, matTrans, matRot;
-	D3DXMatrixRotationY(&matRot, 4.65f);
+	D3DXMATRIX matScale, matTrans, matRotY;
+	D3DXMatrixRotationY(&matRotY, 4.68f);
 	D3DXMatrixTranslation(&matTrans, 0.0f, -1.4f, 0.0f);
-	FLOAT scaleValue = 0.3f;
+	FLOAT scaleValue = 0.2f;
 	D3DXMatrixScaling(&matScale, scaleValue, scaleValue, scaleValue);
-	matWorld = matScale * matTrans * matRot;
+	matWorld = matScale * matTrans * matRotY;
 	g_pd3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
 }
 
