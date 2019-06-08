@@ -1,10 +1,10 @@
 class CXMesh
 {
 private:
-	LPD3DXMESH              g_pMesh = NULL; // Our mesh object in sysmem
-	D3DMATERIAL9*           g_pMeshMaterials = NULL; // Materials for our mesh
-	LPDIRECT3DTEXTURE9*     g_pMeshTextures = NULL; // Textures for our mesh
-	DWORD                   g_dwNumMaterials = 0L;   // Number of mesh materials
+	LPD3DXMESH              g_pMesh = NULL; 
+	D3DMATERIAL9*           g_pMeshMaterials = NULL; 
+	LPDIRECT3DTEXTURE9*     g_pMeshTextures = NULL; 
+	DWORD                   g_dwNumMaterials = 0L;   
 	D3DXMATRIX				matWorld;
 	
 	HRESULT InitMeshGeometry(LPDIRECT3DDEVICE9 g_pd3dDevice, const char* meshFile);
@@ -13,53 +13,45 @@ public:
 	VOID Cleanup();
 	void drawMesh(LPDIRECT3DDEVICE9 g_pd3dDevice);
 	void setMeshDefaultPos(LPDIRECT3DDEVICE9 g_pd3dDevice);
-	void setMeshPos(LPDIRECT3DDEVICE9 g_pd3dDevice, float dz, const float movementSpeed);
+	void setMeshPos(LPDIRECT3DDEVICE9 g_pd3dDevice, float dz);
 };
 
 HRESULT CXMesh::InitMeshGeometry(LPDIRECT3DDEVICE9 g_pd3dDevice, const char* meshFile)
 {
 	LPD3DXBUFFER pD3DXMtrlBuffer;
 
-	// Load the mesh from the specified file
-	//const char* meshFile = "meshes\\walle.x";
 	if (FAILED(D3DXLoadMeshFromX(meshFile, D3DXMESH_SYSTEMMEM,
 		g_pd3dDevice, NULL,
 		&pD3DXMtrlBuffer, NULL, &g_dwNumMaterials,
 		&g_pMesh)))
 	{
 		MessageBox(NULL, "Could not find your mesh model", "Source.exe", MB_OK);
-		return E_FAIL; // no return here
+		return E_FAIL;
 	}
 
-	// We need to extract the material properties and texture names from the pD3DXMtrlBuffer
 	D3DXMATERIAL* d3dxMaterials = (D3DXMATERIAL*)pD3DXMtrlBuffer->GetBufferPointer();
 	g_pMeshMaterials = new D3DMATERIAL9[g_dwNumMaterials];
 	g_pMeshTextures = new LPDIRECT3DTEXTURE9[g_dwNumMaterials];
 
 	for (DWORD i = 0; i<g_dwNumMaterials; i++)
 	{
-		// Copy the material
 		g_pMeshMaterials[i] = d3dxMaterials[i].MatD3D;
 
-		// Set the ambient color for the material (D3DX does not do this)
 		g_pMeshMaterials[i].Ambient = g_pMeshMaterials[i].Diffuse;
 
 		g_pMeshTextures[i] = NULL;
 		if (d3dxMaterials[i].pTextureFilename != NULL &&
 			lstrlen(d3dxMaterials[i].pTextureFilename) > 0)
 		{
-			// Create the texture
 			if (FAILED(D3DXCreateTextureFromFile(g_pd3dDevice,
 				d3dxMaterials[i].pTextureFilename,
 				&g_pMeshTextures[i])))
 			{
-				// If texture is not in current folder, try parent folder
 				const TCHAR* strPrefix = TEXT("..\\");
 				const int lenPrefix = lstrlen(strPrefix);
 				TCHAR strTexture[MAX_PATH];
 				lstrcpyn(strTexture, strPrefix, MAX_PATH);
 				lstrcpyn(strTexture + lenPrefix, d3dxMaterials[i].pTextureFilename, MAX_PATH - lenPrefix);
-				// If texture is not in current folder, try parent folder
 				if (FAILED(D3DXCreateTextureFromFile(g_pd3dDevice,
 					strTexture,
 					&g_pMeshTextures[i])))
@@ -70,10 +62,8 @@ HRESULT CXMesh::InitMeshGeometry(LPDIRECT3DDEVICE9 g_pd3dDevice, const char* mes
 		}
 	}
 
-	// Done with the material buffer
 	pD3DXMtrlBuffer->Release();
 
-	//Shows you how to compute a bounding sphere
 	LPDIRECT3DVERTEXBUFFER9 VertexBuffer = NULL;
 	D3DXVECTOR3* Vertices = NULL;
 	D3DXVECTOR3 Center;
@@ -112,14 +102,11 @@ VOID CXMesh::Cleanup()
 
 void CXMesh::drawMesh(LPDIRECT3DDEVICE9 g_pd3dDevice)
 {
-	// Meshes are divided into subsets, one for each material. Render them in a loop
 	for (DWORD i = 0; i<g_dwNumMaterials; i++)
 	{
-		// Set the material and texture for this subset
 		g_pd3dDevice->SetMaterial(&g_pMeshMaterials[i]);
 		g_pd3dDevice->SetTexture(0, g_pMeshTextures[i]);
 
-		// Draw the mesh subset
 		g_pMesh->DrawSubset(i);
 	}
 }
@@ -135,7 +122,7 @@ void CXMesh::setMeshDefaultPos(LPDIRECT3DDEVICE9 g_pd3dDevice)
 	g_pd3dDevice->SetTransform(D3DTS_WORLD, &matWorld);
 }
 
-void CXMesh::setMeshPos(LPDIRECT3DDEVICE9 g_pd3dDevice, float dz, const float movementSpeed)
+void CXMesh::setMeshPos(LPDIRECT3DDEVICE9 g_pd3dDevice, float dz)
 {
 	D3DXMATRIX matTrans;
 	D3DXMatrixTranslation(&matTrans, 0, 0, dz);

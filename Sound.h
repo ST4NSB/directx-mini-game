@@ -5,6 +5,7 @@ private:
 	IGraphBuilder *pGraph = NULL;
 	IMediaControl *pControl = NULL;
 	IMediaEventEx *pEvent = NULL;
+	int audioState;
 	
 	HRESULT InitDirectShow(HWND hWnd, PCWSTR audiofile);
 public:
@@ -12,23 +13,22 @@ public:
 	void HandleGraphEvent();
 	VOID Cleanup();
 	void play();
+	void pause();
+	int getAudioState() { return audioState; }
 };
 
 
 HRESULT DXSound::InitDirectShow(HWND hWnd, LPCWSTR audiofile)
 {
-	//Create Filter Graph
+	audioState = 0;
 	HRESULT hr = CoCreateInstance(CLSID_FilterGraph, NULL,
 		CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void **)&pGraph);
 
-	//Create Media Control and Events
 	hr = pGraph->QueryInterface(IID_IMediaControl, (void **)&pControl);
 	hr = pGraph->QueryInterface(IID_IMediaEventEx, (void **)&pEvent);
 
-	//Load a file
 	hr = pGraph->RenderFile(audiofile, NULL);
 
-	//Set window for events
 	pEvent->SetNotifyWindow((OAHWND)hWnd, WM_GRAPHNOTIFY, 0);
 
 	return S_OK;
@@ -37,6 +37,13 @@ HRESULT DXSound::InitDirectShow(HWND hWnd, LPCWSTR audiofile)
 void DXSound::play()
 {
 	this->pControl->Run();
+	audioState++;
+}
+
+void DXSound::pause()
+{
+	this->pControl->Pause();
+	audioState++;
 }
 
 DXSound::DXSound(HWND hWnd, LPCWSTR audiofile)
@@ -60,8 +67,8 @@ void DXSound::HandleGraphEvent()
 		pEvent->FreeEventParams(evCode, param1, param2);
 		switch (evCode)
 		{
-		case EC_COMPLETE:  // Fall through.
-		case EC_USERABORT: // Fall through.
+		case EC_COMPLETE: 
+		case EC_USERABORT: 
 		case EC_ERRORABORT:
 			PostQuitMessage(0);
 			return;

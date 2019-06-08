@@ -1,18 +1,12 @@
 struct CUSTOMVERTEX
 {
-	D3DXVECTOR3 position; // The position
+	D3DXVECTOR3 position; 
 	D3DXVECTOR3 normal;
-	DWORD color;    // The color
-//#ifndef SHOW_HOW_TO_USE_TCI
-	FLOAT tu, tv;   // The texture coordinates
-//#endif
+	DWORD color;    
+	FLOAT tu, tv;   
 };
 
-//#ifdef SHOW_HOW_TO_USE_TCI
-//#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE)
-//#else
 #define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ | D3DFVF_DIFFUSE | D3DFVF_NORMAL | D3DFVF_TEX1)
-//#endif
 
 class CXSkybox
 {
@@ -94,10 +88,8 @@ HRESULT CXSkybox::InitGeometry(LPDIRECT3DDEVICE9 g_pd3dDevice, const char* szTex
 	if (FAILED(g_pVB->Lock(0, sizeof(g_pVertices), (void**)& pVertices, 0)))
 		return E_FAIL;
 
-	// copy the vertices into the buffer
 	memcpy(pVertices, g_pVertices, sizeof(g_pVertices));
 
-	// unlock the vertex buffer
 	g_pVB->Unlock();
 
 	return S_OK;
@@ -124,19 +116,6 @@ VOID CXSkybox::Cleanup()
 void CXSkybox::drawSkybox(LPDIRECT3DDEVICE9 g_pd3dDevice)
 {
 	for (int i = 0; i < 6; i++) {
-
-		/*#ifdef SHOW_HOW_TO_USE_TCI
-				D3DXMATRIXA16 mat;
-				mat._11 = 0.25f; mat._12 = 0.00f; mat._13 = 0.00f; mat._14 = 0.00f;
-				mat._21 = 0.00f; mat._22 = -0.25f; mat._23 = 0.00f; mat._24 = 0.00f;
-				mat._31 = 0.00f; mat._32 = 0.00f; mat._33 = 1.00f; mat._34 = 0.00f;
-				mat._41 = 0.50f; mat._42 = 0.50f; mat._43 = 0.00f; mat._44 = 1.00f;
-
-				g_pd3dDevice->SetTransform(D3DTS_TEXTURE0, &mat);
-				g_pd3dDevice->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS, D3DTTFF_COUNT2);
-				g_pd3dDevice->SetTextureStageState(0, D3DTSS_TEXCOORDINDEX, D3DTSS_TCI_CAMERASPACEPOSITION);
-		#endif*/
-
 		g_pd3dDevice->SetTexture(0, g_pTextureArray[i]);
 		g_pd3dDevice->SetStreamSource(0, g_pVB, 0, sizeof(CUSTOMVERTEX));
 		g_pd3dDevice->SetFVF(D3DFVF_CUSTOMVERTEX);
@@ -150,9 +129,8 @@ void CXSkybox::setSkyboxDefaultPos(LPDIRECT3DDEVICE9 g_pd3dDevice)
 	D3DXMATRIXA16 matWorld, matRotationy;
 	D3DXMATRIXA16 matScale, matTrans;
 
-	// 4 top, 3 bottom
 	D3DXMatrixRotationY(&matRotationy, 20.77f);
-	FLOAT yScale = 1.1f, xzScale = (1.5 * 5.0f);
+	FLOAT yScale = 1.5f, xzScale = (1.5 * 5.0f);
 	D3DXMatrixScaling(&matScale, xzScale, yScale, xzScale);
 	D3DXMatrixTranslation(&matTrans, -38.0f, -0.93f, 30.5f);
 	matWorld = matScale * matTrans * matRotationy;

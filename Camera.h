@@ -30,7 +30,9 @@ public:
 	HRESULT Update();
 
 	void RotateDown(float fAngle);
+	void RotateUp(float fAngle);
 	void RotateRight(float fAngle);
+	void RotateLeft(float fAngle);
 	void Roll(float fAngle);
 	void MoveForward(float fDist);
 	void MoveBackward(float fDist);
@@ -140,6 +142,12 @@ void CXCamera::SetPosition(FLOAT X, FLOAT Y, FLOAT Z)
 	m_UpdateRequired = true;
 }
 
+void CXCamera::RotateUp(float fAngle)
+{
+	m_fRotAboutRight -= fAngle;
+	m_UpdateRequired = true;
+}
+
 void CXCamera::RotateDown(float fAngle)
 {
 	m_fRotAboutRight += fAngle;
@@ -149,6 +157,12 @@ void CXCamera::RotateDown(float fAngle)
 void CXCamera::RotateRight(float fAngle)
 {
 	m_fRotAboutUp += fAngle;
+	m_UpdateRequired = true;
+}
+
+void CXCamera::RotateLeft(float fAngle)
+{
+	m_fRotAboutUp -= fAngle;
 	m_UpdateRequired = true;
 }
 
@@ -203,7 +217,7 @@ void CXCamera::setCameraPos(int mouseValue)
 	{
 		case 0: 
 		{
-			D3DXVECTOR3 vEyePt(0.0f, 2.0f, -8.0f);
+			D3DXVECTOR3 vEyePt(0.0f, 1.0f, -6.0f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -212,7 +226,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 1: 
 		{
-			D3DXVECTOR3 vEyePt(8.5f, 2.0f, -0.3f);
+			D3DXVECTOR3 vEyePt(10.5f, 2.0f, -0.3f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -221,7 +235,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		}
 		case 2:
 		{
-			D3DXVECTOR3 vEyePt(-8.5f, 2.0f, 0.3f);
+			D3DXVECTOR3 vEyePt(-10.5f, 2.0f, 0.3f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
 			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
@@ -241,16 +255,7 @@ void CXCamera::setCameraPos(int mouseValue)
 		{
 			D3DXVECTOR3 vEyePt(0.0f, 8.0f, -1.6f);
 			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 50.0f);
-			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
-			this->Update();
-			break;
-		}
-		case 5:
-		{
-			D3DXVECTOR3 vEyePt(0.0f, 0.5f, -3.0f);
-			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
+			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 40.0f);
 			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
 			this->Update();
 			break;

@@ -19,12 +19,27 @@
 #include "Sound.h"
 #include "Input.h"
 
+/*
+	Keys:
+		P - play/pause music
+		Camera (mouseValue even):
+			UP-Arrow - move camera forward
+			DOWN-Arrow - move camera backwards
+			LEFT-Arrow - rotate camera left
+			RIGHT-Arrow - rotate camera right
+			W - rotate camera up
+			S - rotate camera down
+		General (mouseValue odd):
+			UP-Arrow - move mesh forward
+			DOWN-Arrow - move mesh backwards
+			V - change mesh camera view
+	Mouse:
+		LEFT-Button - change Mode (Camera/General with mouseValue)
+		RIGHT-Button - change Mode (Camera/General with mouseValue)
+*/
 
-//-----------------------------------------------------------------------------
-// Global variables
-//-----------------------------------------------------------------------------
-LPDIRECT3D9             g_pD3D = NULL; // Used to create the D3DDevice
-LPDIRECT3DDEVICE9       g_pd3dDevice = NULL; // Our rendering device
+LPDIRECT3D9             g_pD3D = NULL; 
+LPDIRECT3DDEVICE9       g_pd3dDevice = NULL; 
 HDC hdc;
 HWND hWnd;
 
@@ -34,28 +49,31 @@ DXInput *dxinput;
 CXSkybox *skybox;
 DXSound *music;
 
+#define PACK 2
+#if PACK == 1
+const char* pack[6] = {
+	"skybox\\pack1\\side.png", "skybox\\pack1\\side.png", "skybox\\pack1\\bottom.png",
+	"skybox\\pack1\\top.png", "skybox\\pack1\\side.png", "skybox\\pack1\\side.png" };
+LPCWSTR audio = L"sounds\\audio1.wav";
+#elif PACK == 2
+const char* pack[6] = {
+	"skybox\\pack2\\side.png", "skybox\\pack2\\side.png", "skybox\\pack2\\bottom.png",
+	"skybox\\pack2\\top.png", "skybox\\pack2\\side.png", "skybox\\pack2\\side.png" };
+LPCWSTR audio = L"sounds\\audio2.wav";
+#endif
 const char* mesh_file = "meshes\\walle.x";
-LPCWSTR audioMusic = L"sounds\\music.mp3";
-const char* szTextureFiles[6] = { 
-	"skybox\\pack1\\1.jpg", "skybox\\pack1\\2.jpg", "skybox\\pack1\\3.jpg", 
-	"skybox\\pack1\\4.jpg", "skybox\\pack1\\5.jpg", "skybox\\pack1\\6.jpg" };
 
-const float	movementSpeed = 0.010f;
+const float	movementSpeed = 0.015f;
 float dz;
 int mouseValue = 0;
+int cameraOption = 0;
 
-//-----------------------------------------------------------------------------
-// Name: InitD3D()
-// Desc: Initializes Direct3D
-//-----------------------------------------------------------------------------
+
 HRESULT InitD3D(HWND hWnd)
 {
-	// Create the D3D object.
 	if (NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
 		return E_FAIL;
 
-	// Set up the structure used to create the D3DDevice. Since we are now
-	// using more complex geometry, we will create a device with a zbuffer.
 	D3DPRESENT_PARAMETERS d3dpp;
 	ZeroMemory(&d3dpp, sizeof(d3dpp));
 	d3dpp.Windowed = TRUE;
@@ -64,7 +82,6 @@ HRESULT InitD3D(HWND hWnd)
 	d3dpp.EnableAutoDepthStencil = TRUE;
 	d3dpp.AutoDepthStencilFormat = D3DFMT_D16;
 
-	// Create the D3DDevice
 	if (FAILED(g_pD3D->CreateDevice(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, hWnd,
 		D3DCREATE_SOFTWARE_VERTEXPROCESSING,
 		&d3dpp, &g_pd3dDevice)))
@@ -75,13 +92,9 @@ HRESULT InitD3D(HWND hWnd)
 			return E_FAIL;
 	}
 
-	// Turn off culling
 	g_pd3dDevice->SetRenderState(D3DRS_CULLMODE, D3DCULL_NONE);
-
-	// Turn off D3D lighting
-	g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, FALSE);
-
-	// Turn on the zbuffer
+	g_pd3dDevice->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_ANISOTROPIC);
+	g_pd3dDevice->SetRenderState(D3DRS_SHADEMODE, D3DSHADE_GOURAUD);
 	g_pd3dDevice->SetRenderState(D3DRS_ZENABLE, TRUE);
 	
 	g_pd3dDevice->SetTextureStageState(0, D3DTSS_COLOROP, D3DTOP_MODULATE);
@@ -93,25 +106,15 @@ HRESULT InitD3D(HWND hWnd)
 }
 
 
-
-//-----------------------------------------------------------------------------
-// Name: InitGeometry()
-// Desc: Load the mesh and build the material and texture arrays
-//-----------------------------------------------------------------------------
 HRESULT InitGeometry()
 {
 	camera = new CXCamera(g_pd3dDevice);
 	mesh = new CXMesh(g_pd3dDevice, mesh_file);
-	skybox = new CXSkybox(g_pd3dDevice, szTextureFiles);
+	skybox = new CXSkybox(g_pd3dDevice, pack);
 
 	return S_OK;
 }
 
-
-//-----------------------------------------------------------------------------
-// Name: Cleanup()
-// Desc: Releases all previously initialized objects
-//-----------------------------------------------------------------------------
 VOID Cleanup()
 {
 	if (g_pd3dDevice != NULL)
@@ -121,41 +124,74 @@ VOID Cleanup()
 		g_pD3D->Release();
 }
 
-
-//-----------------------------------------------------------------------------
-// Name: SetupMatrices()
-// Desc: Sets up the world, view, and projection transform matrices.
-//-----------------------------------------------------------------------------
 VOID SetupMatrices()
 {
 	mesh->setMeshDefaultPos(g_pd3dDevice);
-
-	// Set up our view matrix. A view matrix can be defined given an eye point,
-	// a point to lookat, and a direction for which way is up. Here, we set the
-	// eye five units back along the z-axis and up three units, look at the 
-	// origin, and define "up" to be in the y-direction.
 	
-	camera->setCameraPos(mouseValue);
+	if(mouseValue % 2 == 0)
+		camera->setCameraPos(cameraOption);
 	
-
-	// For the projection matrix, we set up a perspective transform (which
-	// transforms geometry from 3D view space to 2D viewport space, with
-	// a perspective divide making objects smaller in the distance). To build
-	// a perpsective transform, we need the field of view (1/4 pi is common),
-	// the aspect ratio, and the near and far clipping planes (which define at
-	// what distances geometry should be no longer be rendered).
 	D3DXMATRIXA16 matProj;
 	D3DXMatrixPerspectiveFovLH(&matProj, D3DX_PI / 4, 1.0f, 1.0f, 100.0f);
 	g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &matProj);
-
-	
 }
 
+VOID SetupLigtsOutside()
+{
+	D3DMATERIAL9 mtrl;
+	ZeroMemory(&mtrl, sizeof(mtrl));
+	mtrl.Diffuse.r = mtrl.Ambient.r = 1.0f;
+	mtrl.Diffuse.g = mtrl.Ambient.g = 1.0f;
+	mtrl.Diffuse.b = mtrl.Ambient.b = 1.0f;
+	mtrl.Diffuse.a = mtrl.Ambient.a = 1.0f;
+	g_pd3dDevice->SetMaterial(&mtrl);
 
-//-----------------------------------------------------------------------------
-// Name: Render()
-// Desc: Draws the scene
-//-----------------------------------------------------------------------------
+	D3DXVECTOR3 vecDir;
+	D3DLIGHT9 light;
+	ZeroMemory(&light, sizeof(light));
+	light.Type = D3DLIGHT_DIRECTIONAL;
+
+	light.Diffuse.r = 1.0f;
+	light.Diffuse.g = 1.0f;
+	light.Diffuse.b = 1.0f;
+
+	light.Direction = D3DXVECTOR3(1, 1, 1);
+
+	light.Range = 1000.0f;
+
+	g_pd3dDevice->SetRenderState(D3DRS_AMBIENT, D3DCOLOR_RGBA(170, 170, 170, 200));
+	g_pd3dDevice->SetLight(0, &light);
+	g_pd3dDevice->LightEnable(0, TRUE); 
+}
+
+VOID SetupLightsRedAlert()
+{
+	D3DMATERIAL9 mtrl;
+	ZeroMemory(&mtrl, sizeof(D3DMATERIAL9));
+	mtrl.Diffuse.r = mtrl.Ambient.r = 1.0f;
+	mtrl.Diffuse.g = mtrl.Ambient.g = 1.0f;
+	mtrl.Diffuse.b = mtrl.Ambient.b = 0.0f;
+	mtrl.Diffuse.a = mtrl.Ambient.a = 0.4f;
+	g_pd3dDevice->SetMaterial(&mtrl);
+
+	D3DXVECTOR3 vecDir;
+	D3DLIGHT9 light;
+	ZeroMemory(&light, sizeof(D3DLIGHT9));
+	light.Type = D3DLIGHT_DIRECTIONAL;
+	light.Diffuse.r = 0.8f;
+	light.Diffuse.g = 0.1f;
+	light.Diffuse.b = 0.1f;
+	vecDir = D3DXVECTOR3(cosf(timeGetTime() / 450.0f),
+		1.0f,
+		sinf(timeGetTime() / 450.0f));
+	D3DXVec3Normalize((D3DXVECTOR3*)&light.Direction, &vecDir);
+	light.Range = 1000.0f;
+	g_pd3dDevice->SetLight(0, &light);
+	g_pd3dDevice->LightEnable(0, TRUE);
+	g_pd3dDevice->SetRenderState(D3DRS_LIGHTING, TRUE);
+	g_pd3dDevice->SetRenderState(D3DRS_AMBIENT, 0x00202020);
+}
+
 VOID Render()
 {
 	g_pd3dDevice->Clear(0, NULL, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER,
@@ -164,15 +200,21 @@ VOID Render()
 
 	if (SUCCEEDED(g_pd3dDevice->BeginScene()))
 	{
+		#if PACK == 1
+			SetupLigtsOutside();
+		#elif PACK == 2
+			SetupLightsRedAlert();
+		#endif PACK == 2
+
 		SetupMatrices();
 
-		dxinput->detectKeyMovement(dz, movementSpeed,camera, g_pd3dDevice);
-		dxinput->detectMouseInput(camera, mouseValue);
+		dxinput->detectKeyMovement(dz, movementSpeed, music, camera, mouseValue, cameraOption);
+		dxinput->detectMouseInput(mouseValue);
 		
 		skybox->setSkyboxDefaultPos(g_pd3dDevice);
 		skybox->drawSkybox(g_pd3dDevice);
 		
-		mesh->setMeshPos(g_pd3dDevice, dz, movementSpeed);
+		mesh->setMeshPos(g_pd3dDevice, dz);
 		mesh->drawMesh(g_pd3dDevice);
 
 		g_pd3dDevice->EndScene();
@@ -181,12 +223,6 @@ VOID Render()
 }
 
 
-
-
-//-----------------------------------------------------------------------------
-// Name: MsgProc()
-// Desc: The window's message handler
-//-----------------------------------------------------------------------------
 LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -208,40 +244,30 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 
-//-----------------------------------------------------------------------------
-// Name: WinMain()
-// Desc: The application's entry point
-//-----------------------------------------------------------------------------
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 {
-	// Register the window class
 	WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, MsgProc, 0L, 0L,
 		GetModuleHandle(NULL), NULL, NULL, NULL, NULL,
 		"D3D Wall-e", NULL };
 	RegisterClassEx(&wc);
 
-	// Create the application's window
-	hWnd = CreateWindow("D3D Wall-e", "D3D Wall-e: Simulator",
+	hWnd = CreateWindow("D3D Wall-e", "D3D Wall-e: Mini Simulator",
 		WS_OVERLAPPEDWINDOW, 150, 100, 1000, 750,
 		GetDesktopWindow(), NULL, wc.hInstance, NULL);
 
 	HRESULT hr = CoInitialize(NULL);
 	hdc = GetDC(hWnd);
 
-	// Initialize Direct3D
 	if (SUCCEEDED(InitD3D(hWnd)))
 	{
-		music = new DXSound(hWnd, audioMusic);
-		//music->play();
+		music = new DXSound(hWnd, audio);
+		music->play();
 		dxinput = new DXInput(hInst, hWnd);
-		// Create the scene geometry
 		if (SUCCEEDED(InitGeometry()))
 		{
-			// Show the window
 			ShowWindow(hWnd, SW_SHOWDEFAULT);
 			UpdateWindow(hWnd);
 
-			// Enter the message loop
 			MSG msg;
 			ZeroMemory(&msg, sizeof(msg));
 			while (msg.message != WM_QUIT)
