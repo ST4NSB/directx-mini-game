@@ -49,7 +49,7 @@ DXInput *dxinput;
 CXSkybox *skybox;
 DXSound *music;
 
-#define PACK 2
+#define PACK 1
 #if PACK == 1
 const char* pack[6] = {
 	"skybox\\pack1\\side.png", "skybox\\pack1\\side.png", "skybox\\pack1\\bottom.png",
