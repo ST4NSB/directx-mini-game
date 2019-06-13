@@ -6,10 +6,11 @@ private:
 	DIMOUSESTATE			g_pMousestate;
 	LPDIRECTINPUT8			g_pDin;			
 	LPDIRECTINPUTDEVICE8	g_pDinKeyboard;
-	bool					mouseState[2];
+	bool					mouseLClickState;
 	bool					pKeyState;
 	bool					vKeyState;
-	bool					cameraMovementKeys[6];
+	bool					cameraMovementKeys[4];
+	int						mouseValue;
 
 	HRESULT InitDInput(HINSTANCE hInstance, HWND hWnd);
 public:
@@ -18,9 +19,8 @@ public:
 	VOID DetectInput();
 	VOID CleanDInput();
 	void closeWindow(HWND hwnd);
-	void detectKeyMovement(float &dz, const float movementSpeed, DXSound *music, CXCamera *camera, int mouseValue, int &cameraOption);
-	void detectMouseInput(int &mouseValue);
-	bool getSpaceState() { return vKeyState; }
+	void detectKeyMovement(float &dz, const float movementSpeed, DXSound *music, CXCamera *camera, float cameraX, float cameraY);
+	void detectMouseInput(float &cameraX, float &cameraY);
 	void buttonPressed(unsigned char DIK, bool &bttnState);
 };
 
@@ -53,11 +53,11 @@ HRESULT DXInput::InitDInput(HINSTANCE hInstance, HWND hWnd)
 
 DXInput::DXInput(HINSTANCE hInstance, HWND hWnd)
 {
+	mouseValue = 0;
 	pKeyState = false;
 	vKeyState = false;
-	mouseState[0] = false;
-	mouseState[1] = false;
-	for (int i = 0; i < 6; i++) cameraMovementKeys[i] = false;
+	mouseLClickState = false;
+	for (int i = 0; i < 4; i++) cameraMovementKeys[i] = false;
 	InitDInput(hInstance, hWnd);
 }
 
@@ -85,61 +85,55 @@ void DXInput::buttonPressed(unsigned char DIK, bool &bttnState)
 		bttnState = false;
 }
 
-void DXInput::detectKeyMovement(float &dz, const float movementSpeed, DXSound *music, CXCamera *camera, int mouseValue, int &cameraOption)
+void DXInput::detectKeyMovement(float &dz, const float movementSpeed, DXSound *music, CXCamera *camera, float cameraX, float cameraY)
 {
 	if (mouseValue % 2 == 0)
 	{
 		if (g_Keystate[DIK_UPARROW] & 0x80)
-			dz += movementSpeed;
-		if (g_Keystate[DIK_DOWNARROW] & 0x80)
-			dz -= movementSpeed;
-
-		if (!(g_Keystate[DIK_V] & 0x80) && vKeyState)
-			vKeyState = false;
-		if (g_Keystate[DIK_V] & 0x80 && !vKeyState)
 		{
-			++cameraOption %= 5;
-			vKeyState = true;
+			dz += movementSpeed;
+			camera->MoveInDirection(movementSpeed, new D3DXVECTOR3(0, 0, 1));
+			camera->Update();
+		}
+		if (g_Keystate[DIK_DOWNARROW] & 0x80)
+		{
+			dz -= movementSpeed;
+			camera->MoveInDirection(movementSpeed, new D3DXVECTOR3(0, 0, -1));
+			camera->Update();
 		}
 	}
 	else if (mouseValue % 2 == 1)
 	{
-		const float camera_speed = movementSpeed * 2.5;
+		const float moving_camera_speed = movementSpeed * 2.5 * 3.0;
+
+		camera->RotateUp(cameraY);
+		camera->Update();
+
+		camera->RotateLeft(cameraX);
+		camera->Update();
 
 		buttonPressed(DIK_UPARROW, cameraMovementKeys[0]);
 		if (cameraMovementKeys[0])
 		{
-			camera->MoveForward(camera_speed * 3);
+			camera->MoveForward(moving_camera_speed);
 			camera->Update();
 		}
 		buttonPressed(DIK_DOWNARROW, cameraMovementKeys[1]);
 		if (cameraMovementKeys[1])
 		{
-			camera->MoveBackward(camera_speed * 3);
+			camera->MoveBackward(moving_camera_speed);
 			camera->Update();
 		}
 		buttonPressed(DIK_LEFTARROW, cameraMovementKeys[2]);
 		if (cameraMovementKeys[2])
 		{
-			camera->RotateLeft(camera_speed);
+			camera->MoveLeft(moving_camera_speed);
 			camera->Update();
 		}
 		buttonPressed(DIK_RIGHTARROW, cameraMovementKeys[3]);
 		if (cameraMovementKeys[3])
 		{
-			camera->RotateRight(camera_speed);
-			camera->Update();
-		}
-		buttonPressed(DIK_W, cameraMovementKeys[4]);
-		if (cameraMovementKeys[4])
-		{
-			camera->RotateUp(camera_speed);
-			camera->Update();
-		}
-		buttonPressed(DIK_S, cameraMovementKeys[4]);
-		if (cameraMovementKeys[4])
-		{
-			camera->RotateDown(camera_speed);
+			camera->MoveRight(moving_camera_speed);
 			camera->Update();
 		}
 	}
@@ -153,25 +147,41 @@ void DXInput::detectKeyMovement(float &dz, const float movementSpeed, DXSound *m
 		else music->pause();
 		pKeyState = true;
 	}
+
+	if (!(g_Keystate[DIK_V] & 0x80) && vKeyState)
+		vKeyState = false;
+	if (g_Keystate[DIK_V] & 0x80 && !vKeyState)
+	{
+		camera->setCameraPos();
+		vKeyState = true;
+	}
 }
 
-void DXInput::detectMouseInput(int &mouseValue)
+void DXInput::detectMouseInput(float &cameraX, float &cameraY)
 {
-	if (!(g_pMousestate.rgbButtons[0] & 0x80) && mouseState[0])
-		mouseState[0] = false;
-	if (g_pMousestate.rgbButtons[0] & 0x80 && !mouseState[0])
+	if (!(g_pMousestate.rgbButtons[0] & 0x80) && mouseLClickState)
+		mouseLClickState = false;
+	if (g_pMousestate.rgbButtons[0] & 0x80 && !mouseLClickState)
 	{
 		mouseValue++;
-		mouseState[0] = true;
+		mouseLClickState = true;
 	}
 
-	if (!(g_pMousestate.rgbButtons[1] & 0x80) && mouseState[1])
-		mouseState[1] = false;
-	if (g_pMousestate.rgbButtons[1] & 0x80 && !mouseState[1])
-	{
-		mouseValue++;
-		mouseState[1] = true;
-	}
+	const float camera_speed = 0.0045;
+
+	if (g_pMousestate.lY > 0)
+		cameraY -= camera_speed;
+	else if (g_pMousestate.lY < 0)
+		cameraY += camera_speed;
+	else if (g_pMousestate.lY == 0)
+		cameraY = 0.0;
+
+	if (g_pMousestate.lX > 0)
+		cameraX -= camera_speed;
+	else if (g_pMousestate.lX < 0)
+		cameraX += camera_speed;
+	else if (g_pMousestate.lX == 0)
+		cameraX = 0.0;
 }
 
 void DXInput::closeWindow(HWND hwnd)

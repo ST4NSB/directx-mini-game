@@ -37,10 +37,11 @@ public:
 	void MoveForward(float fDist);
 	void MoveBackward(float fDist);
 	void MoveRight(float fDist);
+	void MoveLeft(float fDist);
 	void MoveUp(float fDist);
 	void MoveDown(float fDist);
 	void MoveInDirection(float fDist, D3DXVECTOR3* Dir);
-	void setCameraPos(int mouseValue);
+	void setCameraPos();
 };
 
 //---------------------------------------------------------------------------------
@@ -190,6 +191,12 @@ void CXCamera::MoveRight(float fDist)
 	m_UpdateRequired = true;
 }
 
+void CXCamera::MoveLeft(float fDist)
+{
+	m_Position -= fDist * m_Right;
+	m_UpdateRequired = true;
+}
+
 void CXCamera::MoveUp(float fDist)
 {
 	m_Position += fDist * m_Up;
@@ -210,55 +217,11 @@ void CXCamera::MoveInDirection(float fDist, D3DXVECTOR3* Dir)
 	m_UpdateRequired = true;
 }
 
-
-void CXCamera::setCameraPos(int mouseValue)
+void CXCamera::setCameraPos()
 {
-	switch (mouseValue)
-	{
-		case 0: 
-		{
-			D3DXVECTOR3 vEyePt(0.0f, 1.0f, -6.0f);
-			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
-			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
-			this->Update();
-			break;
-		}
-		case 1: 
-		{
-			D3DXVECTOR3 vEyePt(10.5f, 2.0f, -0.3f);
-			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
-			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
-			this->Update();
-			break;
-		}
-		case 2:
-		{
-			D3DXVECTOR3 vEyePt(-10.5f, 2.0f, 0.3f);
-			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
-			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
-			this->Update();
-			break;
-		}
-		case 3:
-		{
-			D3DXVECTOR3 vEyePt(0.0f, 1.0f, 4.5f);
-			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
-			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
-			this->Update();
-			break;
-		}
-		case 4:
-		{
-			D3DXVECTOR3 vEyePt(0.0f, 8.0f, -1.6f);
-			D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
-			D3DXVECTOR3 vUpVec(0.0f, 1.0f, 40.0f);
-			this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
-			this->Update();
-			break;
-		}
-	}
+	D3DXVECTOR3 vEyePt(0.0f, 1.0f, -6.0f);
+	D3DXVECTOR3 vLookatPt(0.0f, 0.0f, 0.0f);
+	D3DXVECTOR3 vUpVec(0.0f, 1.0f, 0.0f);
+	this->LookAtPos(&vEyePt, &vLookatPt, &vUpVec);
+	this->Update();
 }

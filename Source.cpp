@@ -1,4 +1,21 @@
 
+/*
+	Keyboard:
+		P - reda/intrerupe fisierul audio
+		V - seteaza pozitia camerei default
+		Camera (par mouseValue):
+			UP-Arrow - muta camera in sus
+			DOWN-Arrow - muta camera in jos
+			LEFT-Arrow - muta camera in stanga
+			RIGHT-Arrow - muta camera in dreapta
+		General (impar mouseValue):
+			UP-Arrow - muta mesha inainte
+			DOWN-Arrow - muta mesha inapoi
+	Mouse:
+		LEFT-Button - schimba modul (operare Camera/General prin mouseValue)
+		Pozitie X/Y - roteste camera fie pe x/y
+*/
+
 #include <Windows.h>
 #include <mmsystem.h>
 #include <d3dx9.h>
@@ -18,25 +35,6 @@
 #include "Mesh.h"
 #include "Sound.h"
 #include "Input.h"
-
-/*
-	Keys:
-		P - play/pause music
-		Camera (mouseValue even):
-			UP-Arrow - move camera forward
-			DOWN-Arrow - move camera backwards
-			LEFT-Arrow - rotate camera left
-			RIGHT-Arrow - rotate camera right
-			W - rotate camera up
-			S - rotate camera down
-		General (mouseValue odd):
-			UP-Arrow - move mesh forward
-			DOWN-Arrow - move mesh backwards
-			V - change mesh camera view
-	Mouse:
-		LEFT-Button - change Mode (Camera/General with mouseValue)
-		RIGHT-Button - change Mode (Camera/General with mouseValue)
-*/
 
 LPDIRECT3D9             g_pD3D = NULL; 
 LPDIRECT3DDEVICE9       g_pd3dDevice = NULL; 
@@ -63,10 +61,8 @@ LPCWSTR audio = L"sounds\\audio2.wav";
 #endif
 const char* mesh_file = "meshes\\walle.x";
 
-const float	movementSpeed = 0.015f;
-float dz;
-int mouseValue = 0;
-int cameraOption = 0;
+const float	movementSpeed = 0.020f;
+float dz, cameraX, cameraY;
 
 
 HRESULT InitD3D(HWND hWnd)
@@ -105,12 +101,14 @@ HRESULT InitD3D(HWND hWnd)
 	return S_OK;
 }
 
-
 HRESULT InitGeometry()
 {
 	camera = new CXCamera(g_pd3dDevice);
 	mesh = new CXMesh(g_pd3dDevice, mesh_file);
 	skybox = new CXSkybox(g_pd3dDevice, pack);
+
+	camera->setCameraPos();
+	mesh->setMeshDefaultPos(g_pd3dDevice);
 
 	return S_OK;
 }
@@ -126,11 +124,6 @@ VOID Cleanup()
 
 VOID SetupMatrices()
 {
-	mesh->setMeshDefaultPos(g_pd3dDevice);
-	
-	if(mouseValue % 2 == 0)
-		camera->setCameraPos(cameraOption);
-	
 	D3DXMATRIXA16 matProj;
 	D3DXMatrixPerspectiveFovLH(&matProj, D3DX_PI / 4, 1.0f, 1.0f, 100.0f);
 	g_pd3dDevice->SetTransform(D3DTS_PROJECTION, &matProj);
@@ -208,8 +201,8 @@ VOID Render()
 
 		SetupMatrices();
 
-		dxinput->detectKeyMovement(dz, movementSpeed, music, camera, mouseValue, cameraOption);
-		dxinput->detectMouseInput(mouseValue);
+		dxinput->detectKeyMovement(dz, movementSpeed, music, camera, cameraX, cameraY);
+		dxinput->detectMouseInput(cameraX, cameraY);
 		
 		skybox->setSkyboxDefaultPos(g_pd3dDevice);
 		skybox->drawSkybox(g_pd3dDevice);
@@ -221,7 +214,6 @@ VOID Render()
 	}
 	g_pd3dDevice->Present(NULL, NULL, NULL, NULL);
 }
-
 
 LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -242,7 +234,6 @@ LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 	return DefWindowProc(hWnd, msg, wParam, lParam);
 }
-
 
 INT WINAPI WinMain(HINSTANCE hInst, HINSTANCE, LPSTR, INT)
 {
